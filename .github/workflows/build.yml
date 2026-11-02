@@ -1,0 +1,86 @@
+# Builds and tests on every push and pull request.
+# Publishes DeskRhythm.exe as a GitHub Release when you either:
+#   - push a tag such as v1.0.0         (git tag v1.0.0 && git push origin v1.0.0), or
+#   - run this workflow by hand          (Actions tab > Build > Run workflow > enter a version).
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, for example 1.0.1 (leave empty to only build)"
+        required: false
+
+permissions:
+  contents: write # needed to create the release
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Work out version
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version }}"
+          if ("${{ github.ref_type }}" -eq "tag") { $version = "${{ github.ref_name }}".TrimStart("v") }
+          if (-not $version) { $version = "0.0.0-ci.${{ github.run_number }}" }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          $release = ("${{ github.ref_type }}" -eq "tag") -or ("${{ github.event.inputs.version }}" -ne "")
+          "release=$($release.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+          "Version: $version, release: $release"
+
+      - name: Test
+        run: dotnet test tests/DeskRhythm.Core.Tests -c Release
+
+      - name: Publish single-file exe
+        run: >
+          dotnet publish src/DeskRhythm/DeskRhythm.csproj -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none
+          -p:Version=${{ steps.version.outputs.version }}
+          -o dist
+
+      - name: Checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash dist/DeskRhythm.exe -Algorithm SHA256).Hash
+          "$hash  DeskRhythm.exe" | Out-File dist/DeskRhythm.exe.sha256 -Encoding ascii
+          "SHA256: $hash"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DeskRhythm-${{ steps.version.outputs.version }}
+          path: |
+            dist/DeskRhythm.exe
+            dist/DeskRhythm.exe.sha256
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $tag = "v${{ steps.version.outputs.version }}"
+          $notes = @"
+          **Download ``DeskRhythm.exe`` below and double-click it.** No install, no admin rights, no .NET needed (Windows 10/11, 64-bit).
+
+          The exe is not code-signed, so Windows SmartScreen may say "Windows protected your PC". Choose **More info → Run anyway** if you trust this source. At work, ask IT first.
+
+          SHA-256 of the exe is in ``DeskRhythm.exe.sha256``.
+          "@
+          gh release create $tag dist/DeskRhythm.exe dist/DeskRhythm.exe.sha256 `
+            --target "${{ github.sha }}" --title "Desk Rhythm $tag" --notes $notes --generate-notes

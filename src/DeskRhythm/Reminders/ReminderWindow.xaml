@@ -1,0 +1,79 @@
+<Window x:Class="DeskRhythm.Reminders.ReminderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:theme="clr-namespace:DeskRhythm.Theming"
+        Title="Desk Rhythm reminder"
+        Width="388"
+        SizeToContent="Height"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        WindowStartupLocation="Manual"
+        Left="0" Top="0"
+        UseLayoutRounding="True"
+        FontFamily="{StaticResource UiFont}"
+        Foreground="{DynamicResource TextBrush}">
+
+    <!-- 14 px transparent margin around the card holds the soft shadow. The card itself is 360 px wide. -->
+    <Grid Margin="14">
+        <Border Style="{StaticResource CardShadow}" />
+        <Border Style="{StaticResource Card}">
+            <Grid Margin="16,14,10,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Phase pictogram: meaning is never shown by colour alone. -->
+                <Border Width="40" Height="40" CornerRadius="10" VerticalAlignment="Top" Margin="0,2,14,0"
+                        Background="{DynamicResource AccentSoftBrush}">
+                    <theme:PhaseGlyph x:Name="Glyph" Width="26" Height="26" Foreground="{DynamicResource AccentBrush}" />
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="0,0,0,2">
+                    <TextBlock x:Name="CaptionText" FontSize="12" Foreground="{DynamicResource SubtleTextBrush}" Text="Desk Rhythm" />
+                    <TextBlock x:Name="TitleText" FontFamily="{StaticResource DisplayFont}" FontSize="19" FontWeight="SemiBold"
+                               Margin="0,1,0,4" TextWrapping="Wrap" Text="Time to stand" />
+                    <TextBlock x:Name="MessageText" FontSize="13" Foreground="{DynamicResource SubtleTextBrush}" TextWrapping="Wrap"
+                               Text="You've been sitting for at least 30 minutes." />
+                    <TextBlock x:Name="DetailText" FontSize="13" Foreground="{DynamicResource SubtleTextBrush}" TextWrapping="Wrap"
+                               Text="Try 15 minutes standing at your desk." />
+                </StackPanel>
+
+                <Button x:Name="HideButton" Grid.Column="2" Style="{StaticResource IconButton}" VerticalAlignment="Top" Margin="4,-4,0,0"
+                        Content="&#xE8BB;" FontSize="10"
+                        ToolTip="Hide for now (this reminder comes back later)"
+                        AutomationProperties.Name="Hide for now" />
+
+                <CheckBox x:Name="ToggleBox" Grid.Row="1" Grid.ColumnSpan="3" Style="{StaticResource ToggleSwitch}"
+                          Margin="54,12,10,0" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock x:Name="ToggleLabel" FontSize="13" />
+                        <TextBlock x:Name="ToggleHint" Style="{StaticResource Hint}" />
+                    </StackPanel>
+                </CheckBox>
+
+                <DockPanel Grid.Row="2" Grid.ColumnSpan="3" Margin="0,14,6,0" LastChildFill="False">
+                    <Button x:Name="MoreButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}"
+                            AutomationProperties.Name="More options">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="More" VerticalAlignment="Center" />
+                            <TextBlock Text="&#xE70D;" FontFamily="{StaticResource IconFont}" FontSize="10" Margin="6,1,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <WrapPanel x:Name="ActionPanel" DockPanel.Dock="Left" />
+                </DockPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DeskRhythm.Core/DeskRhythm.Core.csproj" />
+    <Project Path="src/DeskRhythm/DeskRhythm.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DeskRhythm.Core.Tests/DeskRhythm.Core.Tests.csproj" />
+  </Folder>
+</Solution>
