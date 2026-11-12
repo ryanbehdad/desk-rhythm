@@ -42,6 +42,7 @@ internal sealed class AppController : IDisposable
         {
             PhaseDuration = PhaseDuration,
             RepromptDelay = () => Minutes(Settings.RepromptMinutes),
+            HasStandingDesk = () => Settings.HasStandingDesk,
             ShortAwayGrace = testMode ? TimeSpan.FromSeconds(5) : TimeSpan.FromMinutes(5),
             LongAbsence = testMode ? TimeSpan.FromSeconds(60) : TimeSpan.FromMinutes(60),
         });
@@ -114,6 +115,31 @@ internal sealed class AppController : IDisposable
     public void RestartCycle() => Engine.RestartCycle();
 
     public void SwitchTo(Phase phase) => Engine.SwitchTo(phase);
+
+    /// <summary>The phases the user can switch to. Standing is left out when there is no standing desk.</summary>
+    public IReadOnlyList<Phase> SelectablePhases => Settings.HasStandingDesk
+        ? Enum.GetValues<Phase>()
+        : [Phase.Sitting, Phase.Moving];
+
+    /// <summary>Turn the standing desk on or off (home / office). Applies from the next transition.</summary>
+    public void SetStandingDesk(bool hasStandingDesk)
+    {
+        if (Settings.HasStandingDesk == hasStandingDesk)
+        {
+            return;
+        }
+
+        var s = Settings.Clone();
+        s.HasStandingDesk = hasStandingDesk;
+        ApplySettings(s);
+    }
+
+    /// <summary>"No standing desk here" / "I have a standing desk here" on the welcome-back card: switch and start fresh.</summary>
+    public void SwitchDeskAndRestart(bool hasStandingDesk)
+    {
+        SetStandingDesk(hasStandingDesk);
+        Engine.RestartCycle();
+    }
 
     public void Stop() => Engine.Stop();
 
@@ -225,6 +251,8 @@ internal sealed class AppController : IDisposable
         ApplySessionSettings();
         _tray.Refresh();
         _status?.Refresh(force: true);
+        _settingsWindow?.RefreshDeskMode();
+        _reminders.OnSettingsChanged();
     }
 
     public void Exit()
@@ -400,7 +428,7 @@ internal sealed class AppController : IDisposable
         {
             Phase.Sitting => TimeSpan.FromSeconds(10),
             Phase.Standing => TimeSpan.FromSeconds(5),
-            _ => TimeSpan.FromSeconds(3),
+            _ => Settings.HasStandingDesk ? TimeSpan.FromSeconds(3) : TimeSpan.FromSeconds(4),
         }
         : TimeSpan.FromMinutes(Settings.MinutesFor(phase));
 }

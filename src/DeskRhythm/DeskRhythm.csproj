@@ -13,7 +13,7 @@
     <ApplicationIcon>Assets\DeskRhythm.ico</ApplicationIcon>
     <Product>Desk Rhythm</Product>
     <Description>A quiet sit-stand-move reminder for Windows 11.</Description>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <!-- WPF reads per-monitor DPI awareness from app.manifest; the WinForms advice does not apply here. -->
     <NoWarn>$(NoWarn);WFO0003</NoWarn>

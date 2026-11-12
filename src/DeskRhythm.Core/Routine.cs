@@ -84,6 +84,9 @@ public sealed class RoutineTimings
     /// <summary>Delay before an ignored or closed prompt shows again.</summary>
     public required Func<TimeSpan> RepromptDelay { get; init; }
 
+    /// <summary>False: no standing desk, so the routine skips Standing (Sitting -> Moving -> Sitting).</summary>
+    public Func<bool> HasStandingDesk { get; init; } = () => true;
+
     /// <summary>Away for less than this: continue silently. Longer: ask the user.</summary>
     public TimeSpan ShortAwayGrace { get; init; } = TimeSpan.FromMinutes(5);
 

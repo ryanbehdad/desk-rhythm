@@ -34,6 +34,7 @@ public partial class StatusWindow : Window
             HidePanel();
             _app.ShowSettings();
         };
+        DeskModeButton.Click += (_, _) => _app.SetStandingDesk(!_app.Settings.HasStandingDesk);
         Deactivated += (_, _) => HidePanel();
         PreviewKeyDown += (_, e) =>
         {
@@ -102,6 +103,14 @@ public partial class StatusWindow : Window
         ProgressDone.Width = new GridLength(progress, GridUnitType.Star);
         ProgressLeft.Width = new GridLength(1 - progress, GridUnitType.Star);
 
+        var hasDesk = _app.Settings.HasStandingDesk;
+        _switchButtons[Phase.Standing].Visibility = hasDesk ? Visibility.Visible : Visibility.Collapsed;
+        SwitchPanel.Columns = hasDesk ? 3 : 2;
+        DeskModeButton.Content = PhaseText.DeskModeSwitchLabel(hasDesk);
+        DeskModeButton.ToolTip = hasDesk
+            ? "Sit, then take a short walking break. Applies from your next change of position."
+            : "Sit, stand, then take a short walk. Applies from your next change of position.";
+
         foreach (var (phase, button) in _switchButtons)
         {
             var current = e.IsActive && e.Phase == phase;
@@ -112,7 +121,7 @@ public partial class StatusWindow : Window
                 : $"Start a fresh {PhaseText.Gerund(phase)} phase ({PhaseText.Short(e.DurationOf(phase))})";
         }
 
-        var key = $"{e.State}|{e.Phase}|{e.PauseReason}";
+        var key = $"{e.State}|{e.Phase}|{e.PauseReason}|{hasDesk}";
         if (force || key != _actionsKey)
         {
             _actionsKey = key;
@@ -129,17 +138,19 @@ public partial class StatusWindow : Window
         {
             case RoutineState.Stopped:
                 return ("Not running", "Ready",
-                    $"Press Start when you sit down. You'll get a reminder to stand after {PhaseText.Long(e.DurationOf(Phase.Sitting))}.");
+                    _app.Settings.HasStandingDesk
+                        ? $"Press Start when you sit down. You'll get a reminder to stand after {PhaseText.Long(e.DurationOf(Phase.Sitting))}."
+                        : $"Press Start when you sit down. You'll get a reminder to take a walking break after {PhaseText.Long(e.DurationOf(Phase.Sitting))}.");
 
             case RoutineState.Running:
-                var next = RoutineEngine.Next(e.Phase);
+                var next = e.NextPhase;
                 var nextText = e.Phase == Phase.Moving
                     ? "sit down again"
                     : $"{(next == Phase.Standing ? "stand" : "walk")} for {PhaseText.Long(e.DurationOf(next))}";
                 return (name, PhaseText.Clock(e.Remaining), $"Next: {nextText} · reminder at {PhaseText.At(e.Remaining)}");
 
             case RoutineState.ReminderPending:
-                return ($"{name} · action due", PhaseText.DueTitle(e.Phase),
+                return ($"{name} · action due", PhaseText.DueTitle(e.Phase, e.NextPhase),
                     e.RepromptRemaining is { } again
                         ? $"The reminder shows again in {PhaseText.Clock(again)}. Change position when you can."
                         : "Change position when you can, then confirm below.");
@@ -147,7 +158,7 @@ public partial class StatusWindow : Window
             case RoutineState.Snoozed:
                 var snooze = e.SnoozeRemaining ?? TimeSpan.Zero;
                 return ($"{name} · snoozed", PhaseText.Clock(snooze),
-                    $"\"{PhaseText.DueTitle(e.Phase)}\" comes back at {PhaseText.At(snooze)}.");
+                    $"\"{PhaseText.DueTitle(e.Phase, e.NextPhase)}\" comes back at {PhaseText.At(snooze)}.");
 
             case RoutineState.NeedsResync:
                 return ("Waiting for you", frozenBig,
@@ -180,7 +191,7 @@ public partial class StatusWindow : Window
                 break;
 
             case RoutineState.ReminderPending or RoutineState.Snoozed:
-                AddButton(PhaseText.AcknowledgeLabel(e.Phase), _app.Acknowledge, primary: true);
+                AddButton(PhaseText.AcknowledgeLabel(e.Phase, e.NextPhase), _app.Acknowledge, primary: true);
                 var snooze = _app.Minutes(_app.Settings.SnoozeMinutes[0]);
                 AddButton($"Snooze {PhaseText.Short(snooze)}", () => _app.Snooze(snooze));
                 AddPauseMenuButton();

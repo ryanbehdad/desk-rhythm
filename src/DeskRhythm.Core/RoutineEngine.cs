@@ -82,12 +82,23 @@ public sealed class RoutineEngine
 
     public bool IsTransitionDue => State is RoutineState.ReminderPending or RoutineState.Snoozed;
 
-    /// <summary>Skip is offered for the standing break and for the walk, not for "sit again".</summary>
+    /// <summary>Skip is offered for the standing break and for the walk or break, not for "sit again".</summary>
     public bool CanSkip => IsTransitionDue && Phase != Phase.Moving;
 
-    public static Phase Next(Phase phase) => phase switch
+    /// <summary>True if the routine includes Standing. Read at each transition, so a change applies to the next one.</summary>
+    public bool HasStandingDesk => _timings.HasStandingDesk();
+
+    /// <summary>The phase that follows the current one in the routine that is active now.</summary>
+    public Phase NextPhase => Next(Phase, HasStandingDesk);
+
+    /// <summary>
+    /// With a standing desk: Sitting -> Standing -> Moving -> Sitting.
+    /// Without: Sitting -> Moving -> Sitting. A Standing phase that was running when
+    /// the desk was turned off still ends with Moving.
+    /// </summary>
+    public static Phase Next(Phase phase, bool hasStandingDesk) => phase switch
     {
-        Phase.Sitting => Phase.Standing,
+        Phase.Sitting => hasStandingDesk ? Phase.Standing : Phase.Moving,
         Phase.Standing => Phase.Moving,
         _ => Phase.Sitting,
     };
@@ -110,7 +121,7 @@ public sealed class RoutineEngine
             return false;
         }
 
-        BeginPhase(Next(Phase));
+        BeginPhase(NextPhase);
         return true;
     }
 

@@ -19,6 +19,54 @@ public class AppSettingsTests
         Assert.Equal([5, 10, 15], s.SnoozeMinutes);
         Assert.True(s.PauseOnLockOrSleep);
         Assert.False(s.PauseWhenIdle);
+        Assert.True(s.HasStandingDesk);
+        Assert.Equal(40, s.SitOnlySittingMinutes);
+        Assert.Equal(5, s.SitOnlyBreakMinutes);
+    }
+
+    [Fact]
+    public void MinutesFor_uses_the_routine_of_the_desk_mode()
+    {
+        var s = new AppSettings { SittingMinutes = 30, StandingMinutes = 15, MovingMinutes = 2, SitOnlySittingMinutes = 40, SitOnlyBreakMinutes = 5 };
+
+        Assert.Equal(30, s.MinutesFor(Phase.Sitting));
+        Assert.Equal(2, s.MinutesFor(Phase.Moving));
+
+        s.HasStandingDesk = false;
+        Assert.Equal(40, s.MinutesFor(Phase.Sitting));
+        Assert.Equal(15, s.MinutesFor(Phase.Standing));
+        Assert.Equal(5, s.MinutesFor(Phase.Moving));
+    }
+
+    [Fact]
+    public void Normalize_clamps_sit_only_values()
+    {
+        var s = new AppSettings { SitOnlySittingMinutes = 1, SitOnlyBreakMinutes = 99 }.Normalize();
+
+        Assert.Equal(AppSettings.SittingMin, s.SitOnlySittingMinutes);
+        Assert.Equal(AppSettings.MovingMax, s.SitOnlyBreakMinutes);
+    }
+
+    [Fact]
+    public void Old_settings_file_without_desk_fields_keeps_the_standing_desk_routine()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "DeskRhythmTests", Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(dir, "settings.json");
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(path, "{ \"SittingMinutes\": 25, \"StandingMinutes\": 10, \"MovingMinutes\": 3 }");
+
+        try
+        {
+            var loaded = new JsonFileStore<AppSettings>(path, () => new AppSettings()).Load().Normalize();
+            Assert.True(loaded.HasStandingDesk);
+            Assert.Equal(25, loaded.SittingMinutes);
+            Assert.Equal(40, loaded.SitOnlySittingMinutes);
+            Assert.Equal(5, loaded.SitOnlyBreakMinutes);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     [Fact]
@@ -67,10 +115,20 @@ public class AppSettingsTests
 
         try
         {
-            store.Save(new AppSettings { SittingMinutes = 40, PopupMonitors = MonitorMode.PrimaryMonitor });
+            store.Save(new AppSettings
+            {
+                SittingMinutes = 40,
+                PopupMonitors = MonitorMode.PrimaryMonitor,
+                HasStandingDesk = false,
+                SitOnlySittingMinutes = 35,
+                SitOnlyBreakMinutes = 4,
+            });
             var loaded = store.Load();
             Assert.Equal(40, loaded.SittingMinutes);
             Assert.Equal(MonitorMode.PrimaryMonitor, loaded.PopupMonitors);
+            Assert.False(loaded.HasStandingDesk);
+            Assert.Equal(35, loaded.SitOnlySittingMinutes);
+            Assert.Equal(4, loaded.SitOnlyBreakMinutes);
 
             File.WriteAllText(path, "{ not json");
             var fallback = store.Load();

@@ -21,7 +21,7 @@
             <TextBlock Style="{StaticResource Hint}" FontSize="13" Margin="0,2,0,18"
                        Text="Changes save automatically and apply right away." />
             <Border x:Name="TestModeNote" Style="{StaticResource Section}" Visibility="Collapsed" Background="{DynamicResource AccentSoftBrush}" Padding="14,10">
-                <TextBlock TextWrapping="Wrap" Text="Test mode: phases last 10 s / 5 s / 3 s, and every other 'minute' in this window counts as one second." />
+                <TextBlock TextWrapping="Wrap" Text="Test mode: phases last 10 s / 5 s / 3 s (no standing desk: 10 s / 4 s), and every other 'minute' in this window counts as one second." />
             </Border>
 
             <Grid>
@@ -36,58 +36,102 @@
                     <Border Style="{StaticResource Section}">
                         <StackPanel>
                             <TextBlock Style="{StaticResource SectionTitle}" Text="Your routine" Margin="0,0,0,2" />
-                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,14" Text="New durations apply from the next phase." />
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,12" Text="New durations and desk changes apply from the next phase." />
 
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <theme:PhaseGlyph x:Name="SitGlyph" Phase="Sitting" Width="20" Height="20" Margin="0,0,8,0" />
-                                <TextBlock Grid.Column="1" Style="{StaticResource Label}" Text="Sitting" />
-                                <TextBlock x:Name="SittingValue" Grid.Column="2" Style="{StaticResource Label}" FontWeight="SemiBold" Text="30 min" />
-                                <Slider x:Name="SittingSlider" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,6,0,0" Minimum="5" Maximum="120"
-                                        AutomationProperties.Name="Sitting duration in minutes" />
-                            </Grid>
+                            <WrapPanel Margin="0,0,0,6">
+                                <RadioButton x:Name="DeskYes" GroupName="Desk" Style="{StaticResource ChoiceChip}" Content="Standing desk" />
+                                <RadioButton x:Name="DeskNo" GroupName="Desk" Style="{StaticResource ChoiceChip}" Content="No standing desk" />
+                            </WrapPanel>
+                            <TextBlock x:Name="DeskHint" Style="{StaticResource Hint}" Margin="0,0,0,14" TextWrapping="Wrap" />
 
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <theme:PhaseGlyph x:Name="StandGlyph" Phase="Standing" Width="20" Height="20" Margin="0,0,8,0" />
-                                <TextBlock Grid.Column="1" Style="{StaticResource Label}" Text="Standing" />
-                                <TextBlock x:Name="StandingValue" Grid.Column="2" Style="{StaticResource Label}" FontWeight="SemiBold" Text="15 min" />
-                                <Slider x:Name="StandingSlider" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,6,0,0" Minimum="1" Maximum="60"
-                                        AutomationProperties.Name="Standing duration in minutes" />
-                            </Grid>
+                            <StackPanel x:Name="StandingDeskPanel">
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <theme:PhaseGlyph x:Name="SitGlyph" Phase="Sitting" Width="20" Height="20" Margin="0,0,8,0" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Label}" Text="Sitting" />
+                                    <TextBlock x:Name="SittingValue" Grid.Column="2" Style="{StaticResource Label}" FontWeight="SemiBold" Text="30 min" />
+                                    <Slider x:Name="SittingSlider" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,6,0,0" Minimum="5" Maximum="120"
+                                            AutomationProperties.Name="Sitting duration in minutes" />
+                                </Grid>
 
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <theme:PhaseGlyph x:Name="MoveGlyph" Phase="Moving" Width="20" Height="20" Margin="0,0,8,0" />
-                                <TextBlock Grid.Column="1" Style="{StaticResource Label}" Text="Moving (short walk)" />
-                                <TextBlock x:Name="MovingValue" Grid.Column="2" Style="{StaticResource Label}" FontWeight="SemiBold" Text="2 min" />
-                                <Slider x:Name="MovingSlider" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,6,0,0" Minimum="1" Maximum="15"
-                                        AutomationProperties.Name="Movement duration in minutes" />
-                            </Grid>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <theme:PhaseGlyph x:Name="StandGlyph" Phase="Standing" Width="20" Height="20" Margin="0,0,8,0" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Label}" Text="Standing" />
+                                    <TextBlock x:Name="StandingValue" Grid.Column="2" Style="{StaticResource Label}" FontWeight="SemiBold" Text="15 min" />
+                                    <Slider x:Name="StandingSlider" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,6,0,0" Minimum="1" Maximum="60"
+                                            AutomationProperties.Name="Standing duration in minutes" />
+                                </Grid>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <theme:PhaseGlyph x:Name="MoveGlyph" Phase="Moving" Width="20" Height="20" Margin="0,0,8,0" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Label}" Text="Moving (short walk)" />
+                                    <TextBlock x:Name="MovingValue" Grid.Column="2" Style="{StaticResource Label}" FontWeight="SemiBold" Text="2 min" />
+                                    <Slider x:Name="MovingSlider" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,6,0,0" Minimum="1" Maximum="15"
+                                            AutomationProperties.Name="Movement duration in minutes" />
+                                </Grid>
+                            </StackPanel>
+
+                            <StackPanel x:Name="SitOnlyPanel">
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <theme:PhaseGlyph x:Name="SitOnlyGlyph" Phase="Sitting" Width="20" Height="20" Margin="0,0,8,0" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Label}" Text="Sitting" />
+                                    <TextBlock x:Name="SitOnlySittingValue" Grid.Column="2" Style="{StaticResource Label}" FontWeight="SemiBold" Text="40 min" />
+                                    <Slider x:Name="SitOnlySittingSlider" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,6,0,0" Minimum="5" Maximum="120"
+                                            AutomationProperties.Name="Sitting duration without a standing desk, in minutes" />
+                                </Grid>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <theme:PhaseGlyph x:Name="BreakGlyph" Phase="Moving" Width="20" Height="20" Margin="0,0,8,0" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Label}" Text="Walking break" />
+                                    <TextBlock x:Name="SitOnlyBreakValue" Grid.Column="2" Style="{StaticResource Label}" FontWeight="SemiBold" Text="5 min" />
+                                    <Slider x:Name="SitOnlyBreakSlider" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,6,0,0" Minimum="1" Maximum="15"
+                                            AutomationProperties.Name="Walking break duration in minutes" />
+                                </Grid>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 

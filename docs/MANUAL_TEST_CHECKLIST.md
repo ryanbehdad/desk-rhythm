@@ -76,3 +76,16 @@ Mark each line ✅ or ❌.
 ## All day
 
 - [ ] 34. Leave the app running for a workday. Task Manager shows near 0 % CPU and about 30–60 MB memory.
+
+## No standing desk
+
+Note: test mode uses the real `settings.json`, so a desk change made in test mode is kept. **Reset settings** turns the standing desk on again.
+
+- [ ] 37. Right-click tray → turn off **I have a standing desk**. The status panel shows two "I'm now…" buttons (Sitting, Moving) and the link **I have a standing desk here**. Settings shows **No standing desk** with the Sitting and Walking break sliders (40 / 5 min).
+- [ ] 38. Start sitting. At the end (10 s in test mode) the card says **Time for a break**, "Stand up and walk for …", with **Start break**. The tray tooltip says "Action due: time for a break".
+- [ ] 39. Press **Start break**. The break lasts 4 s (test mode). Then **Ready to sit?** → **I'm sitting** starts a new sitting phase.
+- [ ] 40. At **Time for a break**, press **More → Skip this break**. A new sitting phase starts.
+- [ ] 41. While a **Time to stand** card shows (standing desk on), turn the desk off in the tray. The card changes to **Time for a break** at once, without a second chime.
+- [ ] 42. With the routine stopped, the Ready card has **More → No standing desk here**. Choose it: the card stays and its text talks about a walk. The "I'm standing" button is gone.
+- [ ] 43. On a **Welcome back** card, **More → No standing desk here** (or **I have a standing desk here**) changes the mode and starts a fresh sitting phase.
+- [ ] 44. Change the sitting-only durations, switch the desk on and off, exit and start again. Both routines keep their own durations.

@@ -71,6 +71,8 @@
                 <Border Height="1" Margin="0,16,8,12" Background="{DynamicResource StrokeBrush}" />
                 <TextBlock Text="I'm now…" FontSize="12" Foreground="{DynamicResource SubtleTextBrush}" Margin="0,0,0,8" />
                 <UniformGrid x:Name="SwitchPanel" Columns="3" Margin="0,0,8,0" />
+                <Button x:Name="DeskModeButton" Style="{StaticResource LinkButton}" HorizontalAlignment="Left" Margin="0,8,0,0"
+                        Content="No standing desk here" />
             </StackPanel>
         </Border>
     </Grid>

@@ -31,6 +31,18 @@ public sealed class AppSettings
 
     public int MovingMinutes { get; set; } = 2;
 
+    /// <summary>
+    /// False: there is no standing desk (for example at home). The routine is then
+    /// Sitting -> Moving (a walking break) -> Sitting, with its own durations below.
+    /// </summary>
+    public bool HasStandingDesk { get; set; } = true;
+
+    /// <summary>Sitting time when there is no standing desk.</summary>
+    public int SitOnlySittingMinutes { get; set; } = 40;
+
+    /// <summary>Length of the walking break when there is no standing desk.</summary>
+    public int SitOnlyBreakMinutes { get; set; } = 5;
+
     public MonitorMode PopupMonitors { get; set; } = MonitorMode.AllMonitors;
 
     public PopupCorner PopupCorner { get; set; } = PopupCorner.BottomRight;
@@ -48,11 +60,12 @@ public sealed class AppSettings
 
     public int IdleMinutes { get; set; } = 10;
 
+    /// <summary>The duration of <paramref name="phase"/> in the routine that is active now.</summary>
     public int MinutesFor(Phase phase) => phase switch
     {
-        Phase.Sitting => SittingMinutes,
+        Phase.Sitting => HasStandingDesk ? SittingMinutes : SitOnlySittingMinutes,
         Phase.Standing => StandingMinutes,
-        _ => MovingMinutes,
+        _ => HasStandingDesk ? MovingMinutes : SitOnlyBreakMinutes,
     };
 
     public AppSettings Clone()
@@ -68,6 +81,8 @@ public sealed class AppSettings
         SittingMinutes = Math.Clamp(SittingMinutes, SittingMin, SittingMax);
         StandingMinutes = Math.Clamp(StandingMinutes, StandingMin, StandingMax);
         MovingMinutes = Math.Clamp(MovingMinutes, MovingMin, MovingMax);
+        SitOnlySittingMinutes = Math.Clamp(SitOnlySittingMinutes, SittingMin, SittingMax);
+        SitOnlyBreakMinutes = Math.Clamp(SitOnlyBreakMinutes, MovingMin, MovingMax);
         RepromptMinutes = Math.Clamp(RepromptMinutes, RepromptMin, RepromptMax);
         IdleMinutes = Math.Clamp(IdleMinutes, IdleMin, IdleMax);
 

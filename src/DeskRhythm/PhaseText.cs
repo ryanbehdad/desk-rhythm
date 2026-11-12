@@ -15,29 +15,36 @@ internal static class PhaseText
 
     public static string Gerund(Phase phase) => Name(phase).ToLowerInvariant();
 
-    /// <summary>Reminder title when <paramref name="phase"/> ends.</summary>
-    public static string DueTitle(Phase phase) => phase switch
+    /// <summary>Reminder title when <paramref name="phase"/> ends and <paramref name="next"/> comes after it.</summary>
+    public static string DueTitle(Phase phase, Phase next) => (phase, next) switch
     {
-        Phase.Sitting => "Time to stand",
-        Phase.Standing => "Time to move",
+        (Phase.Sitting, Phase.Standing) => "Time to stand",
+        (Phase.Sitting, _) => "Time for a break",
+        (Phase.Standing, _) => "Time to move",
         _ => "Ready to sit?",
     };
 
     /// <summary>What the user should do when <paramref name="phase"/> ends ("it is time to ...").</summary>
-    public static string DueAction(Phase phase) => phase switch
+    public static string DueAction(Phase phase, Phase next) => (phase, next) switch
     {
-        Phase.Sitting => "stand",
-        Phase.Standing => "take a short walk",
+        (Phase.Sitting, Phase.Standing) => "stand",
+        (Phase.Sitting, _) => "get up and take a short walk",
+        (Phase.Standing, _) => "take a short walk",
         _ => "sit down again",
     };
 
     /// <summary>The button the user presses after changing position.</summary>
-    public static string AcknowledgeLabel(Phase phase) => phase switch
+    public static string AcknowledgeLabel(Phase phase, Phase next) => (phase, next) switch
     {
-        Phase.Sitting => "I'm standing",
-        Phase.Standing => "Start walk",
+        (Phase.Sitting, Phase.Standing) => "I'm standing",
+        (Phase.Sitting, _) => "Start break",
+        (Phase.Standing, _) => "Start walk",
         _ => "I'm sitting",
     };
+
+    /// <summary>Label of the switch that turns the standing desk on or off.</summary>
+    public static string DeskModeSwitchLabel(bool hasStandingDesk) =>
+        hasStandingDesk ? "No standing desk here" : "I have a standing desk here";
 
     public static string SwitchLabel(Phase phase) => phase switch
     {

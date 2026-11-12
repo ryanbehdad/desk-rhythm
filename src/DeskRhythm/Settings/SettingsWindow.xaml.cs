@@ -24,15 +24,17 @@ public partial class SettingsWindow : Window
         SitGlyph.SetResourceReference(PhaseGlyph.ForegroundProperty, "TextBrush");
         StandGlyph.SetResourceReference(PhaseGlyph.ForegroundProperty, "TextBrush");
         MoveGlyph.SetResourceReference(PhaseGlyph.ForegroundProperty, "TextBrush");
+        SitOnlyGlyph.SetResourceReference(PhaseGlyph.ForegroundProperty, "TextBrush");
+        BreakGlyph.SetResourceReference(PhaseGlyph.ForegroundProperty, "TextBrush");
 
         SourceInitialized += (_, _) => ThemeManager.ApplyTitleBar(this);
 
-        foreach (var slider in new[] { SittingSlider, StandingSlider, MovingSlider, RepromptSlider, IdleSlider })
+        foreach (var slider in new[] { SittingSlider, StandingSlider, MovingSlider, SitOnlySittingSlider, SitOnlyBreakSlider, RepromptSlider, IdleSlider })
         {
             slider.ValueChanged += (_, _) => OnChanged();
         }
 
-        foreach (var radio in new[] { MonitorsAll, MonitorsMouse, MonitorsPrimary, CornerBottomRight, CornerBottomLeft, CornerTopRight, CornerTopLeft })
+        foreach (var radio in new[] { DeskYes, DeskNo, MonitorsAll, MonitorsMouse, MonitorsPrimary, CornerBottomRight, CornerBottomLeft, CornerTopRight, CornerTopLeft })
         {
             radio.Checked += (_, _) => OnChanged();
         }
@@ -91,6 +93,18 @@ public partial class SettingsWindow : Window
         _loading = wasLoading;
     }
 
+    /// <summary>The desk mode changed (here, in the tray, the status panel or on a card): show the real value.</summary>
+    internal void RefreshDeskMode()
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        var desk = _app.Settings.HasStandingDesk;
+        DeskYes.IsChecked = desk;
+        DeskNo.IsChecked = !desk;
+        UpdateLabels();
+        _loading = wasLoading;
+    }
+
     private void Load()
     {
         _loading = true;
@@ -99,6 +113,10 @@ public partial class SettingsWindow : Window
         SittingSlider.Value = s.SittingMinutes;
         StandingSlider.Value = s.StandingMinutes;
         MovingSlider.Value = s.MovingMinutes;
+        SitOnlySittingSlider.Value = s.SitOnlySittingMinutes;
+        SitOnlyBreakSlider.Value = s.SitOnlyBreakMinutes;
+        DeskYes.IsChecked = s.HasStandingDesk;
+        DeskNo.IsChecked = !s.HasStandingDesk;
         RepromptSlider.Value = s.RepromptMinutes;
         IdleSlider.Value = s.IdleMinutes;
 
@@ -135,6 +153,9 @@ public partial class SettingsWindow : Window
         s.SittingMinutes = (int)SittingSlider.Value;
         s.StandingMinutes = (int)StandingSlider.Value;
         s.MovingMinutes = (int)MovingSlider.Value;
+        s.SitOnlySittingMinutes = (int)SitOnlySittingSlider.Value;
+        s.SitOnlyBreakMinutes = (int)SitOnlyBreakSlider.Value;
+        s.HasStandingDesk = DeskNo.IsChecked != true;
         s.RepromptMinutes = (int)RepromptSlider.Value;
         s.IdleMinutes = (int)IdleSlider.Value;
         s.PopupMonitors = MonitorsMouse.IsChecked == true ? MonitorMode.MouseMonitor
@@ -163,6 +184,15 @@ public partial class SettingsWindow : Window
         SittingValue.Text = $"{(int)SittingSlider.Value} min";
         StandingValue.Text = $"{(int)StandingSlider.Value} min";
         MovingValue.Text = $"{(int)MovingSlider.Value} min";
+        SitOnlySittingValue.Text = $"{(int)SitOnlySittingSlider.Value} min";
+        SitOnlyBreakValue.Text = $"{(int)SitOnlyBreakSlider.Value} min";
+
+        var desk = DeskNo.IsChecked != true;
+        StandingDeskPanel.Visibility = desk ? Visibility.Visible : Visibility.Collapsed;
+        SitOnlyPanel.Visibility = desk ? Visibility.Collapsed : Visibility.Visible;
+        DeskHint.Text = desk
+            ? "Sit, stand, then take a short walk."
+            : "Sit, then get up and walk. In one study, a 5-minute walk every 30 minutes gave the clearest benefit. Set Sitting to 30 min for that pattern.";
         RepromptValue.Text = $"{(int)RepromptSlider.Value} min";
         IdleValue.Text = $"{(int)IdleSlider.Value} min";
         IdleRow.IsEnabled = IdleToggle.IsChecked == true;

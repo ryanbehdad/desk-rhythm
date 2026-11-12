@@ -12,6 +12,19 @@ Default routine:
 
 The next phase starts **when you press the button**, not when the reminder appears.
 
+### No standing desk? (for example at home)
+
+Turn off **I have a standing desk** (tray menu, status panel or Settings). The routine then has no standing phase:
+
+| Phase         | Duration | Reminder at the end     | Button you press |
+|---------------|---------:|-------------------------|------------------|
+| Sitting       | 40 min   | **Time for a break**    | Start break      |
+| Walking break | 5 min    | **Ready to sit?**       | I'm sitting      |
+
+The two routines keep their own durations, so you can switch between home and office without losing your settings. A change applies from your next change of position: the phase that runs now keeps its length, and a reminder that is on screen updates at once. (If Desk Rhythm restarts during that phase, the phase you resume gets the length of the new routine.)
+
+Why a walk and not only "stand up"? In a small study at Columbia University (Diaz et al., 2023), a **5-minute walk every 30 minutes** was the only pattern that lowered both blood sugar after meals and blood pressure during 8 hours of sitting. Walks every 60 minutes did not lower blood sugar. If 40 minutes is too long for you, set the sitting time to 30 minutes.
+
 > Desk Rhythm is a gentle movement prompt. It is not a health tracker, and the timings are not medical advice.
 
 ---
@@ -48,8 +61,9 @@ If the exe is already gone: in Task Manager → **Startup apps**, disable Desk R
 | See the time left                 | Point to the tray icon (tooltip), or click it to open the status panel. |
 | Change position early             | Status panel → **I'm now…** → Sitting / Standing / Moving. Or right-click the tray icon → **Switch phase**. |
 | Delay a reminder                  | **Snooze 5 min** on the card. **More** has 10 and 15 min, and Pause for 30 min / 1 hour / 2 hours. |
-| Skip a break                      | Card → **More** → **Skip this standing break** / **Skip this walk**. A new sitting phase starts. |
+| Skip a break                      | Card → **More** → **Skip this standing break** / **Skip this walk** (no standing desk: **Skip this break**). A new sitting phase starts. |
 | Hide a card without deciding      | **×**, Esc, or do nothing. The card hides after 30 s and comes back after 5 min (you can change this). |
+| Work without a standing desk      | Right-click tray → turn off **I have a standing desk**. Or status panel → **No standing desk here**. When you come back after a long time away, the "Welcome back" card also has this under **More**. |
 | Go into a meeting                 | Right-click tray → **Pause 1 hour** (or 30 min / 2 hours). |
 | Present                           | Right-click tray → **Quiet mode (presenting)**. Turn it off when you finish. |
 | Stop for the day                  | Right-click tray → **Stop routine**. |
@@ -74,7 +88,9 @@ Right-click the tray icon → **Settings…**. All changes save and apply immedi
 
 | Setting | Default |
 |---|---|
-| Sitting / Standing / Moving | 30 / 15 / 2 min (ranges 5–120, 1–60, 1–15) |
+| Standing desk | On |
+| Sitting / Standing / Moving (with a standing desk) | 30 / 15 / 2 min (ranges 5–120, 1–60, 1–15) |
+| Sitting / Walking break (no standing desk) | 40 / 5 min (ranges 5–120, 1–15) |
 | Show reminders on | All monitors (or: monitor with mouse, primary monitor) |
 | Corner | Bottom right |
 | Remind again after an ignored popup | 5 min |
@@ -137,13 +153,13 @@ GitHub then makes the release `v1.0.1` with `DeskRhythm.exe` and its SHA-256 che
 DeskRhythm.exe --test-mode
 ```
 
-Phases last 10 s / 5 s / 3 s. Every other "minute" (snooze, pause, re-prompt, idle) counts as one second, and the time-out is 10 s. Test mode keeps its own state file (`state.test.json`) and shows "TEST MODE" in the status panel and the tooltip. It is only on when you give the flag.
+Phases last 10 s / 5 s / 3 s (no standing desk: 10 s sitting, 4 s break). Every other "minute" (snooze, pause, re-prompt, idle) counts as one second, and the time-out is 10 s. Test mode keeps its own state file (`state.test.json`) and shows "TEST MODE" in the status panel and the tooltip. It is only on when you give the flag.
 
 ## Project layout
 
 ```
 src/DeskRhythm.Core/          No UI. Unit-tested.
-  RoutineEngine.cs            The state machine: Sitting/Standing/Moving, pending, snoozed, paused, resync.
+  RoutineEngine.cs            The state machine: Sitting/Standing/Moving (or Sitting/Moving with no standing desk), pending, snoozed, paused, resync.
   Routine.cs                  Enums, clock interface, timings, snapshot.
   AppSettings.cs              Settings, defaults, validation.
   JsonFileStore.cs            Safe JSON read/write (temp file + replace).

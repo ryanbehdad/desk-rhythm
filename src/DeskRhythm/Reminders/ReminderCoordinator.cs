@@ -17,11 +17,13 @@ internal sealed class ReminderCoordinator : IDisposable
     private readonly DispatcherTimer _displayDebounce;
     private ReminderContent? _current;
     private int _attention;
+    private bool _hasStandingDesk;
 
     public ReminderCoordinator(AppController app, RoutineEngine engine, TimeSpan popupTimeout)
     {
         _app = app;
         _engine = engine;
+        _hasStandingDesk = app.Settings.HasStandingDesk;
         _timeout = new DispatcherTimer { Interval = popupTimeout };
         _timeout.Tick += (_, _) => HideAndKeepPending();
         _displayDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
@@ -72,13 +74,50 @@ internal sealed class ReminderCoordinator : IDisposable
         }
     }
 
+    /// <summary>
+    /// Settings changed. If the desk mode changed, a visible card that talks about the
+    /// next phase is out of date: rebuild it in place, with no chime and no new time-out.
+    /// </summary>
+    public void OnSettingsChanged()
+    {
+        var hasStandingDesk = _app.Settings.HasStandingDesk;
+        if (hasStandingDesk == _hasStandingDesk)
+        {
+            return;
+        }
+
+        _hasStandingDesk = hasStandingDesk;
+        var rebuilt = _current?.Kind switch
+        {
+            ReminderKind.PhaseEnded => BuildPhaseEnded(),
+            ReminderKind.WelcomeBack => BuildWelcomeBack(),
+            ReminderKind.Ready => BuildReady(),
+            _ => null,
+        };
+
+        if (rebuilt is null)
+        {
+            return;
+        }
+
+        // The old copies close without reporting "pointer left", so start the count again.
+        _current = rebuilt;
+        _attention = 0;
+        var settings = _app.Settings;
+        _overlays.Show(rebuilt, settings.PopupMonitors, settings.PopupCorner);
+        if (!_timeout.IsEnabled)
+        {
+            _timeout.Start();
+        }
+    }
+
     public void Dispose()
     {
         _engine.Changed -= OnEngineChanged;
         HideAll();
     }
 
-    private void Show(ReminderContent content)
+    private void Show(ReminderContent content, bool chime = true)
     {
         HideAll();
         _current = content;
@@ -86,7 +125,7 @@ internal sealed class ReminderCoordinator : IDisposable
         _overlays.Show(content, settings.PopupMonitors, settings.PopupCorner);
         _timeout.Start();
 
-        if (settings.SoundEnabled)
+        if (chime && settings.SoundEnabled)
         {
             Chime.Play();
         }
@@ -145,7 +184,7 @@ internal sealed class ReminderCoordinator : IDisposable
     private ReminderContent BuildPhaseEnded()
     {
         var phase = _engine.Phase;
-        var next = RoutineEngine.Next(phase);
+        var next = _engine.NextPhase;
         var nextDuration = _engine.DurationOf(next);
         var snoozes = _app.Settings.SnoozeMinutes.Select(_app.Minutes).ToArray();
 
@@ -160,16 +199,22 @@ internal sealed class ReminderCoordinator : IDisposable
         if (_engine.CanSkip)
         {
             more.Add(null);
-            more.Add(phase == Phase.Sitting
-                ? new ReminderAction("Skip this standing break", _app.Skip, ToolTip: "Start a new sitting phase now")
-                : new ReminderAction("Skip this walk", _app.Skip, ToolTip: "Start a new sitting phase now"));
+            var skipLabel = (phase, next) switch
+            {
+                (Phase.Sitting, Phase.Standing) => "Skip this standing break",
+                (Phase.Sitting, _) => "Skip this break",
+                _ => "Skip this walk",
+            };
+            more.Add(new ReminderAction(skipLabel, _app.Skip, ToolTip: "Start a new sitting phase now"));
         }
 
-        var (message, detail) = phase switch
+        var (message, detail) = (phase, next) switch
         {
-            Phase.Sitting => ($"You've been sitting for at least {PhaseText.Long(_engine.PhaseDuration)}.",
-                              $"Try {PhaseText.Long(nextDuration)} standing at your desk."),
-            Phase.Standing => ($"You've been standing for about {PhaseText.Long(_engine.PhaseDuration)}.",
+            (Phase.Sitting, Phase.Standing) => ($"You've been sitting for at least {PhaseText.Long(_engine.PhaseDuration)}.",
+                                                $"Try {PhaseText.Long(nextDuration)} standing at your desk."),
+            (Phase.Sitting, _) => ($"You've been sitting for at least {PhaseText.Long(_engine.PhaseDuration)}.",
+                                   $"Stand up and walk for {PhaseText.Long(nextDuration)}. A walk to the kitchen and back counts."),
+            (Phase.Standing, _) => ($"You've been standing for about {PhaseText.Long(_engine.PhaseDuration)}.",
                                $"Take a gentle {PhaseText.Adjective(nextDuration)} walk."),
             _ => ($"Your {PhaseText.Adjective(_engine.PhaseDuration)} movement break has ended.",
                   "Sit down whenever you're ready."),
@@ -179,12 +224,12 @@ internal sealed class ReminderCoordinator : IDisposable
         {
             Kind = ReminderKind.PhaseEnded,
             Accent = next,
-            Title = PhaseText.DueTitle(phase),
+            Title = PhaseText.DueTitle(phase, next),
             Message = message,
             Detail = detail,
             Actions =
             [
-                new ReminderAction(PhaseText.AcknowledgeLabel(phase), _app.Acknowledge, IsPrimary: true,
+                new ReminderAction(PhaseText.AcknowledgeLabel(phase, next), _app.Acknowledge, IsPrimary: true,
                     ToolTip: $"Start the {PhaseText.Gerund(next)} timer now"),
                 new ReminderAction($"Snooze {PhaseText.Short(snoozes[0])}", () => _app.Snooze(snoozes[0])),
             ],
@@ -196,15 +241,20 @@ internal sealed class ReminderCoordinator : IDisposable
     {
         var phase = _engine.Phase;
         var message = _engine.FrozenWhilePending
-            ? $"When the timer paused, it was time to {PhaseText.DueAction(phase)}."
+            ? $"When the timer paused, it was time to {PhaseText.DueAction(phase, _engine.NextPhase)}."
             : $"You were {PhaseText.Gerund(phase)}, with {PhaseText.Long(_engine.Remaining)} left.";
 
         var more = new List<ReminderAction?>();
-        foreach (var p in Enum.GetValues<Phase>())
+        foreach (var p in _app.SelectablePhases)
         {
             more.Add(new ReminderAction(PhaseText.SwitchLabel(p), () => _app.SwitchTo(p)));
         }
 
+        // A change of place (office <-> home) usually ends on this card, so offer the desk switch here.
+        var desk = _app.Settings.HasStandingDesk;
+        more.Add(null);
+        more.Add(new ReminderAction(PhaseText.DeskModeSwitchLabel(desk), () => _app.SwitchDeskAndRestart(!desk),
+            ToolTip: "Change the routine and start a fresh sitting phase"));
         more.Add(null);
         more.Add(new ReminderAction("Stop the routine", _app.Stop));
 
@@ -225,24 +275,46 @@ internal sealed class ReminderCoordinator : IDisposable
         };
     }
 
-    private ReminderContent BuildReady() => new()
+    private ReminderContent BuildReady()
     {
-        Kind = ReminderKind.Ready,
-        Accent = Phase.Sitting,
-        Title = "Ready when you are",
-        Message = "Press Start when you sit down.",
-        Detail = $"Desk Rhythm will remind you to stand after {PhaseText.Long(_engine.DurationOf(Phase.Sitting))}.",
-        Actions =
-        [
-            new ReminderAction("Start sitting", _app.Start, IsPrimary: true),
-            new ReminderAction("I'm standing", () => _app.SwitchTo(Phase.Standing)),
-        ],
-        Toggle = new ReminderToggle(
-            "Start with Windows",
-            "Opens in the tray when you sign in.",
-            () => _app.LaunchAtSignIn,
-            _app.SetLaunchAtSignIn),
-    };
+        var desk = _app.Settings.HasStandingDesk;
+        var sitting = PhaseText.Long(_engine.DurationOf(Phase.Sitting));
+
+        var actions = new List<ReminderAction> { new("Start sitting", _app.Start, IsPrimary: true) };
+        if (desk)
+        {
+            actions.Add(new ReminderAction("I'm standing", () => _app.SwitchTo(Phase.Standing)));
+        }
+
+        return new ReminderContent
+        {
+            Kind = ReminderKind.Ready,
+            Accent = Phase.Sitting,
+            Title = "Ready when you are",
+            Message = "Press Start when you sit down.",
+            Detail = desk
+                ? $"Desk Rhythm will remind you to stand after {sitting}."
+                : $"No standing desk: Desk Rhythm will remind you to take a {PhaseText.Adjective(_engine.DurationOf(Phase.Moving))} walk after {sitting}.",
+            Actions = actions,
+            MoreActions =
+            [
+                // A chosen action closes the card, so show the updated Ready card again (no chime).
+                new ReminderAction(
+                    PhaseText.DeskModeSwitchLabel(desk),
+                    () =>
+                    {
+                        _app.SetStandingDesk(!desk);
+                        Show(BuildReady(), chime: false);
+                    },
+                    ToolTip: "Change the routine. You can also change it in the tray menu or in Settings."),
+            ],
+            Toggle = new ReminderToggle(
+                "Start with Windows",
+                "Opens in the tray when you sign in.",
+                () => _app.LaunchAtSignIn,
+                _app.SetLaunchAtSignIn),
+        };
+    }
 
     private ReminderContent BuildTest() => new()
     {

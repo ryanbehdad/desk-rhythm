@@ -60,7 +60,7 @@ internal sealed class TrayHost : IDisposable
         {
             RoutineState.Stopped => (TrayGlyph.Stopped, engine.Phase),
             RoutineState.Running => (TrayGlyph.Running, engine.Phase),
-            RoutineState.ReminderPending or RoutineState.Snoozed => (TrayGlyph.Due, RoutineEngine.Next(engine.Phase)),
+            RoutineState.ReminderPending or RoutineState.Snoozed => (TrayGlyph.Due, engine.NextPhase),
             _ => (TrayGlyph.Paused, engine.Phase),
         };
 
@@ -95,8 +95,8 @@ internal sealed class TrayHost : IDisposable
         {
             RoutineState.Stopped => "Not running. Click to start.",
             RoutineState.Running => $"{PhaseText.Name(e.Phase)}: {PhaseText.Clock(e.Remaining)} remaining",
-            RoutineState.ReminderPending => $"Action due: {PhaseText.DueTitle(e.Phase).ToLowerInvariant()}",
-            RoutineState.Snoozed => $"Snoozed: {PhaseText.DueTitle(e.Phase).ToLowerInvariant()} in {PhaseText.Clock(e.SnoozeRemaining ?? TimeSpan.Zero)}",
+            RoutineState.ReminderPending => $"Action due: {PhaseText.DueTitle(e.Phase, e.NextPhase).ToLowerInvariant()}",
+            RoutineState.Snoozed => $"Snoozed: {PhaseText.DueTitle(e.Phase, e.NextPhase).ToLowerInvariant()} in {PhaseText.Clock(e.SnoozeRemaining ?? TimeSpan.Zero)}",
             RoutineState.NeedsResync => "Waiting for you: resume or restart",
             _ => e.PauseReason switch
             {
@@ -128,7 +128,7 @@ internal sealed class TrayHost : IDisposable
 
         if (e.IsTransitionDue)
         {
-            _menu.Items.Add(Item(PhaseText.AcknowledgeLabel(e.Phase), _app.Acknowledge));
+            _menu.Items.Add(Item(PhaseText.AcknowledgeLabel(e.Phase, e.NextPhase), _app.Acknowledge));
             var snooze = _app.Minutes(_app.Settings.SnoozeMinutes[0]);
             _menu.Items.Add(Item($"Snooze {PhaseText.Short(snooze)}", () => _app.Snooze(snooze)));
         }
@@ -152,7 +152,7 @@ internal sealed class TrayHost : IDisposable
         _menu.Items.Add(quiet);
 
         var switchMenu = new Forms.ToolStripMenuItem("Switch phase") { Padding = ItemPadding };
-        foreach (var phase in Enum.GetValues<Phase>())
+        foreach (var phase in _app.SelectablePhases)
         {
             var label = $"{PhaseText.SwitchLabel(phase)} ({PhaseText.Short(e.DurationOf(phase))})";
             var item = Item(label, () => _app.SwitchTo(phase));
@@ -163,6 +163,12 @@ internal sealed class TrayHost : IDisposable
         switchMenu.DropDown.Renderer = _menu.Renderer;
         _menu.Items.Add(switchMenu);
         _menu.Items.Add(Item("Stop routine", _app.Stop, enabled: e.IsActive));
+
+        var hasDesk = _app.Settings.HasStandingDesk;
+        var desk = Item("I have a standing desk", () => _app.SetStandingDesk(!hasDesk));
+        desk.Checked = hasDesk;
+        desk.ToolTipText = "Off: sit, then take a short walking break (for example at home). Applies from your next change of position.";
+        _menu.Items.Add(desk);
 
         _menu.Items.Add(new Forms.ToolStripSeparator());
         var launchAtSignIn = _app.LaunchAtSignIn;
