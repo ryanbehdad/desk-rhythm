@@ -214,7 +214,7 @@ Rendering is software-only. This keeps the graphics driver out of the process: a
 - Cards cannot show on the lock screen, the UAC prompt (secure desktop), or over **exclusive** full-screen apps. Windows does not allow this.
 - Other topmost windows (for example some call windows) can be on top of a card.
 - Windows **Do Not Disturb / Focus** does not hide these cards, because they are app windows and not Windows notifications. Use **Quiet mode** or **Pause** when you present.
-- The exe is not signed. Some company policies (SmartScreen, AppLocker, WDAC) block unsigned apps until IT approves them.
+- The exe is not signed. Some company policies (SmartScreen, AppLocker, WDAC) block unsigned apps until IT approves them. See the [code signing plan](docs/CODE_SIGNING_PLAN.md).
 - Idle detection reads only the time since the last input. It does not read keys or app content.
 - No automatic presentation detection in v1. Use Quiet mode.
 
