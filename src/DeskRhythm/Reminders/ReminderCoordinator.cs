@@ -6,26 +6,23 @@ namespace DeskRhythm.Reminders;
 
 /// <summary>
 /// Turns engine prompts into one logical reminder on screen, and turns clicks on any
-/// copy back into one engine command. Also owns the 30-second time-out.
+/// copy back into one engine command. A card stays on screen until the user chooses
+/// an action or hides it: there is no automatic time-out.
 /// </summary>
 internal sealed class ReminderCoordinator : IDisposable
 {
     private readonly AppController _app;
     private readonly RoutineEngine _engine;
     private readonly MonitorOverlayManager _overlays = new();
-    private readonly DispatcherTimer _timeout;
     private readonly DispatcherTimer _displayDebounce;
     private ReminderContent? _current;
-    private int _attention;
     private bool _hasStandingDesk;
 
-    public ReminderCoordinator(AppController app, RoutineEngine engine, TimeSpan popupTimeout)
+    public ReminderCoordinator(AppController app, RoutineEngine engine)
     {
         _app = app;
         _engine = engine;
         _hasStandingDesk = app.Settings.HasStandingDesk;
-        _timeout = new DispatcherTimer { Interval = popupTimeout };
-        _timeout.Tick += (_, _) => HideAndKeepPending();
         _displayDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
         _displayDebounce.Tick += (_, _) =>
         {
@@ -38,7 +35,6 @@ internal sealed class ReminderCoordinator : IDisposable
 
         _overlays.ActionChosen += OnActionChosen;
         _overlays.CloseRequested += HideAndKeepPending;
-        _overlays.AttentionChanged += OnAttentionChanged;
         _engine.Changed += OnEngineChanged;
     }
 
@@ -59,8 +55,6 @@ internal sealed class ReminderCoordinator : IDisposable
     /// <summary>Remove every copy now. Does not change the routine.</summary>
     public void HideAll()
     {
-        _timeout.Stop();
-        _attention = 0;
         _current = null;
         _overlays.Hide();
     }
@@ -76,7 +70,7 @@ internal sealed class ReminderCoordinator : IDisposable
 
     /// <summary>
     /// Settings changed. If the desk mode changed, a visible card that talks about the
-    /// next phase is out of date: rebuild it in place, with no chime and no new time-out.
+    /// next phase is out of date: rebuild it in place, with no chime.
     /// </summary>
     public void OnSettingsChanged()
     {
@@ -100,15 +94,9 @@ internal sealed class ReminderCoordinator : IDisposable
             return;
         }
 
-        // The old copies close without reporting "pointer left", so start the count again.
         _current = rebuilt;
-        _attention = 0;
         var settings = _app.Settings;
         _overlays.Show(rebuilt, settings.PopupMonitors, settings.PopupCorner);
-        if (!_timeout.IsEnabled)
-        {
-            _timeout.Start();
-        }
     }
 
     public void Dispose()
@@ -119,11 +107,17 @@ internal sealed class ReminderCoordinator : IDisposable
 
     private void Show(ReminderContent content, bool chime = true)
     {
+        // A card that is not from the engine (for example a test card) replaces a pending
+        // engine card: tell the engine it is hidden, so that it shows again later.
+        if (_current?.ComesFromEngine == true && !content.ComesFromEngine)
+        {
+            _engine.DismissPrompt();
+        }
+
         HideAll();
         _current = content;
         var settings = _app.Settings;
         _overlays.Show(content, settings.PopupMonitors, settings.PopupCorner);
-        _timeout.Start();
 
         if (chime && settings.SoundEnabled)
         {
@@ -144,7 +138,7 @@ internal sealed class ReminderCoordinator : IDisposable
         }
     }
 
-    /// <summary>Time-out, close button, Esc or Alt+F4: hide, keep the transition pending.</summary>
+    /// <summary>Close button, Esc or Alt+F4: hide, keep the transition pending.</summary>
     private void HideAndKeepPending()
     {
         var fromEngine = _current?.ComesFromEngine == true;
@@ -152,16 +146,6 @@ internal sealed class ReminderCoordinator : IDisposable
         if (fromEngine)
         {
             _engine.DismissPrompt();
-        }
-    }
-
-    private void OnAttentionChanged(bool attention)
-    {
-        _attention = Math.Max(0, _attention + (attention ? 1 : -1));
-        _timeout.Stop();
-        if (_attention == 0 && _current is not null)
-        {
-            _timeout.Start();
         }
     }
 

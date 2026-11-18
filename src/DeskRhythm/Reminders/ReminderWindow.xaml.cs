@@ -52,8 +52,6 @@ public partial class ReminderWindow : Window
         BuildToggle();
 
         HideButton.Click += (_, _) => CloseRequested?.Invoke();
-        MouseEnter += (_, _) => AttentionChanged?.Invoke(true);
-        MouseLeave += (_, _) => AttentionChanged?.Invoke(false);
         PreviewKeyDown += OnPreviewKeyDown;
         SourceInitialized += (_, _) => NativeMethods.MakeToolWindow(new WindowInteropHelper(this).Handle);
         SizeChanged += (_, _) => KeepInCorner();
@@ -66,9 +64,6 @@ public partial class ReminderWindow : Window
 
     /// <summary>The user flipped the card's switch. The argument is the new value.</summary>
     internal event Action<bool>? ToggleChanged;
-
-    /// <summary>True while the pointer is over the card or its menu is open. The time-out waits.</summary>
-    internal event Action<bool>? AttentionChanged;
 
     internal void ShowOnDisplay() =>
         WindowPlacer.ShowAt(this, _display, _corner, EdgeMargin, activate: false, placed: () =>
@@ -187,8 +182,6 @@ public partial class ReminderWindow : Window
             menu.Items.Add(item);
         }
 
-        menu.Opened += (_, _) => AttentionChanged?.Invoke(true);
-        menu.Closed += (_, _) => AttentionChanged?.Invoke(false);
         menu.IsOpen = true;
     }
 

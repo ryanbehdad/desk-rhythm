@@ -62,7 +62,7 @@ If the exe is already gone: in Task Manager → **Startup apps**, disable Desk R
 | Change position early             | Status panel → **I'm now…** → Sitting / Standing / Moving. Or right-click the tray icon → **Switch phase**. |
 | Delay a reminder                  | **Snooze 5 min** on the card. **More** has 10 and 15 min, and Pause for 30 min / 1 hour / 2 hours. |
 | Skip a break                      | Card → **More** → **Skip this standing break** / **Skip this walk** (no standing desk: **Skip this break**). A new sitting phase starts. |
-| Hide a card without deciding      | **×**, Esc, or do nothing. The card hides after 30 s and comes back after 5 min (you can change this). |
+| Hide a card without deciding      | **×** or Esc. The card comes back after 5 min (you can change this). If you do nothing, the card stays on screen until you press a button. |
 | Work without a standing desk      | Right-click tray → turn off **I have a standing desk**. Or status panel → **No standing desk here**. When you come back after a long time away, the "Welcome back" card also has this under **More**. |
 | Go into a meeting                 | Right-click tray → **Pause 1 hour** (or 30 min / 2 hours). |
 | Present                           | Right-click tray → **Quiet mode (presenting)**. Turn it off when you finish. |
@@ -93,7 +93,7 @@ Right-click the tray icon → **Settings…**. All changes save and apply immedi
 | Sitting / Walking break (no standing desk) | 40 / 5 min (ranges 5–120, 1–15) |
 | Show reminders on | All monitors (or: monitor with mouse, primary monitor) |
 | Corner | Bottom right |
-| Remind again after an ignored popup | 5 min |
+| Show a hidden reminder again after | 5 min |
 | Snooze options | 5, 10, 15 min |
 | Soft chime | Off |
 | Pause when locked or asleep | On |
@@ -153,7 +153,7 @@ GitHub then makes the release `v1.0.1` with `DeskRhythm.exe` and its SHA-256 che
 DeskRhythm.exe --test-mode
 ```
 
-Phases last 10 s / 5 s / 3 s (no standing desk: 10 s sitting, 4 s break). Every other "minute" (snooze, pause, re-prompt, idle) counts as one second, and the time-out is 10 s. Test mode keeps its own state file (`state.test.json`) and shows "TEST MODE" in the status panel and the tooltip. It is only on when you give the flag.
+Phases last 10 s / 5 s / 3 s (no standing desk: 10 s sitting, 4 s break). Every other "minute" (snooze, pause, re-prompt, idle) counts as one second. Test mode keeps its own state file (`state.test.json`) and shows "TEST MODE" in the status panel and the tooltip. It is only on when you give the flag.
 
 ## Project layout
 

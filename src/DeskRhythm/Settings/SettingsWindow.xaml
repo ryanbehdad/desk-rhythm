@@ -201,7 +201,7 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <TextBlock Style="{StaticResource Label}" Text="Remind again after an ignored popup" />
+                                <TextBlock Style="{StaticResource Label}" Text="Show a hidden reminder again after" />
                                 <TextBlock x:Name="RepromptValue" Grid.Column="1" Style="{StaticResource Label}" FontWeight="SemiBold" Text="5 min" />
                                 <Slider x:Name="RepromptSlider" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,6,0,0" Minimum="1" Maximum="30"
                                         AutomationProperties.Name="Re-prompt delay in minutes" />

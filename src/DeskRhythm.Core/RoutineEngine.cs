@@ -72,7 +72,7 @@ public sealed class RoutineEngine
     public TimeSpan? PauseRemaining =>
         State == RoutineState.Paused && _pauseUntil is { } until ? Max(TimeSpan.Zero, until - Now) : null;
 
-    /// <summary>When a hidden prompt shows again (after a time-out or close). Null if none is scheduled.</summary>
+    /// <summary>When a hidden prompt shows again (after the user hides it). Null if none is scheduled.</summary>
     public TimeSpan? RepromptRemaining =>
         State is RoutineState.ReminderPending or RoutineState.NeedsResync && !IsPromptVisible && _promptAt is { } at
             ? Max(TimeSpan.Zero, at - Now)
@@ -152,7 +152,7 @@ public sealed class RoutineEngine
         return true;
     }
 
-    /// <summary>The prompt timed out or the user closed it. It stays pending and shows again later.</summary>
+    /// <summary>The user hid the prompt. It stays pending and shows again later.</summary>
     public void DismissPrompt()
     {
         if (!IsPromptVisible)

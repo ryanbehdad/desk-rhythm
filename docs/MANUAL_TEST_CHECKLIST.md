@@ -2,7 +2,7 @@
 
 Set-up: two external monitors and the laptop display. If possible, use different scaling (for example 100 %, 100 %, 150 %) and put one monitor **left of or above** the primary display (negative coordinates).
 
-Use `DeskRhythm.exe --test-mode` for fast checks (10 s / 5 s / 3 s phases, 1 "minute" = 1 second, 10 s time-out). Do the final check in normal mode.
+Use `DeskRhythm.exe --test-mode` for fast checks (10 s / 5 s / 3 s phases, 1 "minute" = 1 second). Do the final check in normal mode.
 
 Mark each line ✅ or ❌.
 
@@ -20,14 +20,14 @@ Mark each line ✅ or ❌.
 - [ ] 7. On the 150 % display, the card has the same physical size as the text around it (not tiny, not blurry).
 - [ ] 8. Click **I'm standing** on the **second** (non-primary) monitor. **All** cards close at once. The standing countdown starts at that moment.
 
-## Snooze, skip, time-out
+## Snooze, skip, hide
 
 - [ ] 9. At "Time to move", press **More → Snooze 10 min** (10 s in test mode). All cards close. After exactly that delay, the **same** reminder ("Time to move") returns **once** on all displays.
 - [ ] 10. Press **Start walk**, then at "Ready to sit?" press **I'm sitting**. The routine repeats from Sitting.
-- [ ] 11. At "Time to stand", do nothing. The cards hide after 30 s (10 s in test mode). The tray shows "Action due". After 5 min (5 s), the reminder returns once. No duplicate cards.
+- [ ] 11. With **Pause when idle** off, at "Time to stand", do nothing for 2 min. The cards stay on screen until you press a button. No duplicate cards show.
 - [ ] 12. At "Time to stand", press **More → Skip this standing break**. A new sitting phase starts.
-- [ ] 13. Press **×** or Esc on a card. All copies close. The reminder returns later. The phase does not change.
-- [ ] 14. Point to a card: it does not time out while the pointer is on it or the **More** menu is open.
+- [ ] 13. Press **×** or Esc on a card. All copies close. The tray shows "Action due". After 5 min (5 s), the reminder returns once. The phase does not change.
+- [ ] 14. Open the **More** menu, then leave it open for 1 min. The card and the menu stay open.
 
 ## Tray and status panel
 

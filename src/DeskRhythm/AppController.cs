@@ -53,7 +53,7 @@ internal sealed class AppController : IDisposable
         _session.DisplaysChanged += OnDisplaysChanged;
         _session.ThemeChanged += OnThemeChanged;
 
-        _reminders = new ReminderCoordinator(this, Engine, testMode ? TimeSpan.FromSeconds(10) : TimeSpan.FromSeconds(30));
+        _reminders = new ReminderCoordinator(this, Engine);
         _tray = new TrayHost(this);
         Engine.Changed += OnEngineChanged;
 

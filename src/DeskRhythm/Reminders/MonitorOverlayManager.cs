@@ -18,8 +18,6 @@ internal sealed class MonitorOverlayManager
 
     public event Action? CloseRequested;
 
-    public event Action<bool>? AttentionChanged;
-
     public bool IsShowing => _windows.Count > 0;
 
     public void Show(ReminderContent content, MonitorMode mode, PopupCorner corner)
@@ -36,7 +34,6 @@ internal sealed class MonitorOverlayManager
             var window = new ReminderWindow(content, displays[i], i + 1, displays.Count, corner);
             window.ActionChosen += OnActionChosen;
             window.CloseRequested += OnCloseRequested;
-            window.AttentionChanged += OnAttentionChanged;
             window.ToggleChanged += OnToggleChanged;
             _windows.Add(window);
             window.ShowOnDisplay();
@@ -49,7 +46,6 @@ internal sealed class MonitorOverlayManager
         {
             window.ActionChosen -= OnActionChosen;
             window.CloseRequested -= OnCloseRequested;
-            window.AttentionChanged -= OnAttentionChanged;
             window.ToggleChanged -= OnToggleChanged;
             window.CloseFromOwner();
         }
@@ -70,8 +66,6 @@ internal sealed class MonitorOverlayManager
     private void OnActionChosen(ReminderAction action) => ActionChosen?.Invoke(action);
 
     private void OnCloseRequested() => CloseRequested?.Invoke();
-
-    private void OnAttentionChanged(bool attention) => AttentionChanged?.Invoke(attention);
 
     /// <summary>One switch changed: apply it once, then show the real value on every copy.</summary>
     private void OnToggleChanged(bool value)

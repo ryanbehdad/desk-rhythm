@@ -81,7 +81,7 @@ public sealed class RoutineTimings
 {
     public required Func<Phase, TimeSpan> PhaseDuration { get; init; }
 
-    /// <summary>Delay before an ignored or closed prompt shows again.</summary>
+    /// <summary>Delay before a hidden prompt shows again.</summary>
     public required Func<TimeSpan> RepromptDelay { get; init; }
 
     /// <summary>False: no standing desk, so the routine skips Standing (Sitting -> Moving -> Sitting).</summary>
